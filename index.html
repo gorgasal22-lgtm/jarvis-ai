@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>JARVIS A.I</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Noto+Sans+Georgian:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0a0c;
+    --surface:#16151a;
+    --surface-2:#1d1c22;
+    --line:#2a2930;
+    --cream:#f3ede1;
+    --muted:#8b8894;
+    --red:#c8102e;
+    --red-dim:#7a1f2b;
+    --gold:#d4af37;
+    --white:#ffffff;
+    --radius:16px;
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+
+  body{
+    font-family:'Space Grotesk', sans-serif;
+    background:var(--bg);
+    color:var(--cream);
+    height:100vh;
+    width:100vw;
+    overflow:hidden;
+  }
+  .ka{ font-family:'Noto Sans Georgian','Space Grotesk',sans-serif; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important;}
+  }
+
+  /* ===================== SHARED: 3D Georgian flag badge ===================== */
+  .flag3d{
+    width:34px; height:24px;
+    perspective:320px;
+    flex-shrink:0;
+  }
+  .flag3d .cloth{
+    width:100%; height:100%;
+    position:relative;
+    transform-style:preserve-3d;
+    transform-origin:left center;
+    animation:waveFlag 3.6s ease-in-out infinite;
+    border-radius:2px;
+    overflow:hidden;
+    box-shadow:0 3px 10px rgba(0,0,0,.55), 0 1px 3px rgba(0,0,0,.4);
+  }
+  .flag3d svg{ width:100%; height:100%; display:block; }
+  .flag3d .fold-shade{
+    position:absolute; inset:0;
+    background:linear-gradient(100deg,
+      rgba(0,0,0,.38) 0%, rgba(0,0,0,0) 16%,
+      rgba(255,255,255,.18) 34%, rgba(0,0,0,0) 52%,
+      rgba(0,0,0,.30) 74%, rgba(0,0,0,0) 92%);
+    mix-blend-mode:multiply;
+    animation:foldMove 3.6s ease-in-out infinite;
+    pointer-events:none;
+  }
+  .flag3d .sheen{
+    position:absolute; inset:0;
+    background:linear-gradient(100deg, rgba(255,255,255,0) 32%, rgba(255,255,255,.45) 48%, rgba(255,255,255,0) 64%);
+    mix-blend-mode:overlay;
+    animation:sheenMove 3.6s ease-in-out infinite;
+    pointer-events:none;
+  }
+  @keyframes waveFlag{
+    0%   { transform: rotateY(0deg) rotateX(3deg); }
+    25%  { transform: rotateY(22deg) rotateX(-4deg) skewY(2.2deg); }
+    50%  { transform: rotateY(0deg) rotateX(3deg); }
+    75%  { transform: rotateY(-22deg) rotateX(-4deg) skewY(-2.2deg); }
+    100% { transform: rotateY(0deg) rotateX(3deg); }
+  }
+  @keyframes foldMove{
+    0%{ transform:translateX(-25%); }
+    50%{ transform:translateX(25%); }
+    100%{ transform:translateX(-25%); }
+  }
+  @keyframes sheenMove{
+    0%{ transform:translateX(-30%); }
+    50%{ transform:translateX(30%); }
+    100%{ transform:translateX(-30%); }
+  }
+
+  .brand{
+    display:flex; align-items:center; gap:10px;
+  }
+  .brand-wordmark{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:19px;
+    letter-spacing:.5px;
+    color:var(--cream);
+    display:flex; align-items:baseline; gap:6px;
+  }
+  .brand-wordmark .ai-badge{
+    font-size:13px;
+    font-weight:800;
+    letter-spacing:1.2px;
+    background:var(--red);
+    color:var(--white);
+    padding:3px 9px;
+    border-radius:6px;
+    transform:translateY(-1px);
+  }
+
+  /* ===================== VIEW SWITCH ===================== */
+  .view{ display:none; height:100vh; width:100vw; }
+  .view.active{ display:flex; }
+
+  /* ===================== REGISTRATION VIEW ===================== */
+  #view-auth{
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-end;
+    position:relative;
+    background:
+      radial-gradient(ellipse 700px 500px at 50% 8%, rgba(200,16,46,.18), transparent 60%),
+      linear-gradient(180deg, #0a0a0c 0%, #0d0c10 55%, #121116 100%);
+  }
+  .auth-glow{
+    position:absolute; top:0; left:0; right:0; height:55%;
+    background:
+      radial-gradient(circle at 30% 0%, rgba(212,175,55,.07), transparent 55%),
+      radial-gradient(circle at 75% 10%, rgba(200,16,46,.10), transparent 50%);
+    pointer-events:none;
+  }
+  .auth-top{
+    position:absolute; top:48px; left:0; right:0;
+    display:flex; flex-direction:column; align-items:center; gap:18px;
+  }
+  .auth-top .flag3d{ width:56px; height:40px; }
+  .auth-top .brand-wordmark{ font-size:26px; }
+  .auth-tagline{
+    font-family:'Noto Sans Georgian',sans-serif;
+    color:var(--muted);
+    font-size:14px;
+    letter-spacing:.5px;
+  }
+
+  .auth-panel{
+    width:100%; max-width:460px;
+    padding:0 24px 56px;
+    display:flex; flex-direction:column; gap:14px;
+    z-index:2;
+  }
+  .auth-title{
+    font-family:'Noto Sans Georgian',sans-serif;
+    font-size:22px; font-weight:700;
+    text-align:center;
+    margin-bottom:6px;
+    color:var(--cream);
+  }
+  .auth-sub{
+    font-family:'Noto Sans Georgian',sans-serif;
+    text-align:center; color:var(--muted); font-size:13.5px;
+    margin-bottom:18px;
+  }
+  .btn-google{
+    width:100%; padding:16px 20px;
+    background:var(--white); color:#1a1a1a;
+    border:none; border-radius:30px;
+    font-family:'Noto Sans Georgian',sans-serif;
+    font-size:16px; font-weight:700;
+    display:flex; align-items:center; justify-content:center; gap:12px;
+    cursor:pointer;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .btn-google:active{ transform:scale(.98); }
+  .btn-google svg{ width:20px; height:20px; }
+
+  .divider{
+    display:flex; align-items:center; gap:14px;
+    color:var(--muted); font-size:12px; letter-spacing:2px;
+    margin:6px 0;
+  }
+  .divider::before,.divider::after{
+    content:''; flex:1; height:1px; background:var(--line);
+  }
+
+  .input-email{
+    width:100%; padding:16px 20px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:30px;
+    color:var(--cream);
+    font-family:'Noto Sans Georgian',sans-serif;
+    font-size:15px;
+    outline:none;
+    transition:border-color .2s ease, box-shadow .2s ease;
+  }
+  .input-email::placeholder{ color:#5e5c66; }
+  .input-email:focus{ border-color:var(--red); box-shadow:0 0 0 3px rgba(200,16,46,.18); }
+
+  .btn-primary{
+    width:100%; padding:16px 20px;
+    background:linear-gradient(135deg, var(--red) 0%, var(--red-dim) 100%);
+    border:none; border-radius:30px;
+    color:var(--white);
+    font-family:'Noto Sans Georgian',sans-serif;
+    font-size:16px; font-weight:700;
+    cursor:pointer;
+    transition:transform .15s ease;
+  }
+  .btn-primary:active{ transform:scale(.98); }
+
+  .auth-plans{
+    display:flex; gap:10px; margin-top:8px;
+  }
+  .plan-card{
+    flex:1;
+    border:1px solid var(--line);
+    background:var(--surface);
+    border-radius:14px;
+    padding:14px;
+    cursor:pointer;
+    transition:border-color .2s ease, background .2s ease;
+  }
+  .plan-card.selected{
+    border-color:var(--gold);
+    background:linear-gradient(180deg, rgba(212,175,55,.10), rgba(212,175,55,.02));
+  }
+  .plan-name{ font-family:'Noto Sans Georgian',sans-serif; font-weight:700; font-size:14px; }
+  .plan-price{ font-size:13px; color:var(--gold); margin-top:4px; font-weight:600; }
+
+  .auth-legal{
+    text-align:center; font-size:11px; color:#5e5c66;
+    margin-top:10px;
+    font-family:'Noto Sans Georgian',sans-serif;
+  }
+  .auth-legal a{ color:var(--muted); }
+
+  .auth-switch{
+    text-align:center; font-family:'Noto Sans Georgian',sans-serif;
+    font-size:13.5px; color:var(--muted); margin-top:2px;
+  }
+  .auth-switch span{ color:var(--gold); cursor:pointer; font-weight:600; }
+
+  /* ===================== CHAT VIEW ===================== */
+  #view-chat{ flex-direction:row; background:var(--bg); }
+
+  /* Sidebar */
+  .sidebar{
+    width:280px;
+    background:var(--surface);
+    border-right:1px solid var(--line);
+    display:flex; flex-direction:column;
+    flex-shrink:0;
+    transition:margin-left .25s ease;
+  }
+  .sidebar.collapsed{ margin-left:-280px; }
+  .sidebar-top{
+    padding:16px 14px; display:flex; align-items:center; justify-content:space-between;
+    border-bottom:1px solid var(--line);
+  }
+  .icon-btn{
+    width:38px; height:38px; border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+    background:transparent; border:none; cursor:pointer;
+    color:var(--cream); transition:background .15s ease;
+  }
+  .icon-btn:hover{ background:var(--surface-2); }
+  .icon-btn svg{ width:20px; height:20px; }
+
+  .new-chat-btn{
+    margin:14px;
+    display:flex; align-items:center; gap:10px;
+    padding:11px 14px;
+    border-radius:12px;
+    border:1px solid rgba(0,200,120,.35);
+    background:rgba(0,200,120,.08);
+    color:#3ddc97;
+    font-family:'Noto Sans Georgian',sans-serif;
+    font-weight:600; font-size:14px;
+    cursor:pointer;
+    transition:background .15s ease, transform .15s ease;
+  }
+  .new-chat-btn:hover{ background:rgba(0,200,120,.16); }
+  .new-chat-btn:active{ transform:scale(.98); }
+  .new-chat-btn svg{ width:18px; height:18px; flex-shrink:0; }
+
+  .chat-history{
+    flex:1; overflow-y:auto; padding:4px 10px;
+    display:flex; flex-direction:column; gap:2px;
+  }
+  .history-label{
+    font-size:11px; color:#5e5c66; letter-spacing:1.5px; text-transform:uppercase;
+    padding:14px 10px 6px;
+  }
+  .history-item{
+    padding:10px 12px; border-radius:10px;
+    font-family:'Noto Sans Georgian',sans-serif;
+    font-size:13.5px; color:#c7c4cf;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    cursor:pointer;
+    transition:background .15s ease;
+  }
+  .history-item:hover{ background:var(--surface-2); color:var(--cream); }
+  .history-item.active{ background:var(--surface-2); color:var(--cream); }
+
+  .sidebar-bottom{
+    border-top:1px solid var(--line);
+    padding:12px;
+    display:flex; flex-direction:column; gap:4px;
+  }
+  .sidebar-action{
+    display:flex; align-items:center; gap:12px;
+    padding:10px 10px; border-radius:10px;
+    font-family:'Noto Sans Georgian',sans-serif;
+    font-size:13.5px; color:#c7c4cf;
+    cursor:pointer; background:none; border:none; width:100%; text-align:left;
+    transition:background .15s ease, color .15s ease;
+  }
+  .sidebar-action:hover{ background:var(--surface-2); color:var(--cream); }
+  .sidebar-action svg{ width:18px; height:18px; flex-shrink:0; }
+  .sidebar-action.logout{ color:#e0566c; }
+  .sidebar-action.logout:hover{ background:rgba(224,86,108,.1); color:#e0566c; }
+
+  .theme-toggle{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px;
+    border-radius:10px;
+  }
+  .theme-toggle .label{ display:flex; align-items:center; gap:12px; font-family:'Noto Sans Georgian',sans-serif; font-size:13.5px; color:#c7c4cf; }
+  .switch{
+    width:42px; height:24px; border-radius:20px;
+    background:var(--surface-2); border:1px solid var(--line);
+    position:relative; cursor:pointer; flex-shrink:0;
+    transition:background .2s ease;
+  }
+  .switch .knob{
+    position:absolute; top:2px; left:2px;
+    width:18px; height:18px; border-radius:50%;
+    background:var(--gold);
+    transition:transform .2s ease;
+  }
+  .switch.on{ background:rgba(212,175,55,.25); border-color:var(--gold); }
+  .switch.on .knob{ transform:translateX(18px); }
+
+  /* Main chat column */
+  .chat-main{
+    flex:1; display:flex; flex-direction:column; min-width:0;
+  }
+  .chat-topbar{
+    height:60px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 18px;
+    border-bottom:1px solid var(--line);
+    background:var(--bg);
+  }
+  .topbar-left{ display:flex; align-items:center; gap:10px; }
+
+  .chat-scroll{
+    flex:1; overflow-y:auto;
+    padding:30px 18px 10px;
+    display:flex; flex-direction:column; align-items:center;
+  }
+  .chat-scroll::-webkit-scrollbar{ width:6px; }
+  .chat-scroll::-webkit-scrollbar-thumb{ background:var(--line); border-radius:3px; }
+
+  .chat-inner{ width:100%; max-width:720px; display:flex; flex-direction:column; gap:18px; }
+
+  /* Empty-state hero (matches screenshot: greeting near bottom) */
+  .chat-empty{
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+    width:100%; max-width:720px; gap:14px; padding-bottom:18px;
+  }
+  .empty-flag{ width:64px; height:46px; }
+  .empty-greeting{
+    font-family:'Noto Sans Georgian',sans-serif;
+    font-size:21px; font-weight:600;
+    color:var(--gold);
+    text-align:center;
+    letter-spacing:.2px;
+  }
+
+  .msg{
+    max-width:82%;
+    padding:13px 17px;
+    border-radius:16px;
+    font-family:'Noto Sans Georgian',sans-serif;
+    font-size:14.5px;
+    line-height:1.65;
+    animation:msgIn .25s ease-out;
+  }
+  @keyframes msgIn{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+  .msg.ai{ align-self:flex-start; background:var(--surface); border:1px solid var(--line); border-bottom-left-radius:4px; }
+  .msg.user{ align-self:flex-end; background:var(--red-dim); color:var(--cream); border-bottom-right-radius:4px; }
+
+  .chat-input-wrap{
+    padding:14px 18px 20px;
+    display:flex; justify-content:center;
+  }
+  .chat-input-bar{
+    width:100%; max-width:720px;
+    display:flex; align-items:center; gap:8px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:28px;
+    padding:8px 8px 8px 8px;
+  }
+  .chat-input-bar:focus-within{ border-color:var(--red); box-shadow:0 0 0 3px rgba(200,16,46,.15); }
+
+  .attach-btn{
+    width:40px; height:40px; border-radius:50%;
+    background:var(--surface-2); border:none; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    color:var(--cream); flex-shrink:0;
+    transition:background .15s ease;
+  }
+  .attach-btn:hover{ background:#27262e; }
+  .attach-btn svg{ width:19px; height:19px; }
+
+  .chat-input{
+    flex:1; background:transparent; border:none; outline:none;
+    color:var(--cream); font-family:'Noto Sans Georgian',sans-serif; font-size:15px;
+    padding:8px 4px;
+  }
+  .chat-input::placeholder{ color:#5e5c66; }
+
+  .send-btn{
+    width:40px; height:40px; border-radius:50%; flex-shrink:0;
+    background:linear-gradient(135deg, var(--red), var(--red-dim));
+    border:none; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:transform .15s ease;
+  }
+  .send-btn:active{ transform:scale(.92); }
+  .send-btn svg{ width:18px; height:18px; fill:white; }
+
+  #file-input{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+  .attach-preview{
+    display:flex; gap:6px; flex-wrap:wrap; padding:0 18px 8px; max-width:720px; margin:0 auto; width:100%;
+  }
+  .attach-chip{
+    font-family:'Noto Sans Georgian',sans-serif;
+    font-size:12px; background:var(--surface-2); border:1px solid var(--line);
+    border-radius:8px; padding:5px 10px; color:var(--muted);
+  }
+
+  /* Light theme overrides */
+  body.light{ background:#f4f1ea; color:#1c1a17; }
+  body.light #view-chat{ background:#f4f1ea; }
+  body.light .sidebar{ background:#ffffff; border-color:#e4ded0; }
+  body.light .sidebar-top, body.light .sidebar-bottom{ border-color:#e4ded0; }
+  body.light .icon-btn{ color:#1c1a17; }
+  body.light .icon-btn:hover{ background:#eee8da; }
+  body.light .history-item{ color:#5a564c; }
+  body.light .history-item:hover, body.light .history-item.active{ background:#eee8da; color:#1c1a17; }
+  body.light .sidebar-action{ color:#5a564c; }
+  body.light .sidebar-action:hover{ background:#eee8da; color:#1c1a17; }
+  body.light .chat-topbar{ background:#f4f1ea; border-color:#e4ded0; }
+  body.light .brand-wordmark{ color:#1c1a17; }
+  body.light .msg.ai{ background:#ffffff; border-color:#e4ded0; color:#1c1a17; }
+  body.light .chat-input-bar{ background:#ffffff; border-color:#e4ded0; }
+  body.light .attach-btn{ background:#eee8da; color:#1c1a17; }
+  body.light .chat-input{ color:#1c1a17; }
+  body.light .switch{ background:#eee8da; border-color:#e4ded0; }
+  body.light .history-label{ color:#a59f8e; }
+  body.light .chat-input::placeholder{ color:#a59f8e; }
+</style>
+</head>
+<body>
+
+<!-- ============================================================ -->
+<!-- AUTH / REGISTRATION VIEW -->
+<!-- ============================================================ -->
+<div class="view active" id="view-auth">
+  <div class="auth-glow"></div>
+  <div class="auth-top">
+    <div class="flag3d">
+      <div class="cloth">
+        <svg viewBox="0 0 30 20" preserveAspectRatio="none">
+          <rect width="30" height="20" fill="#fff"/>
+          <rect x="12.6" width="4.8" height="20" fill="#c8102e"/>
+          <rect y="7.6" width="30" height="4.8" fill="#c8102e"/>
+          <g fill="#c8102e">
+            <g transform="translate(6.3,3.8) scale(.3) translate(-6,-6)"><rect x="5" width="2" height="12"/><rect y="5" width="12" height="2"/><rect x="3" width="6" height="2"/><rect x="3" y="10" width="6" height="2"/><rect y="3" width="2" height="6"/><rect x="10" y="3" width="2" height="6"/></g>
+            <g transform="translate(23.7,3.8) scale(.3) translate(-6,-6)"><rect x="5" width="2" height="12"/><rect y="5" width="12" height="2"/><rect x="3" width="6" height="2"/><rect x="3" y="10" width="6" height="2"/><rect y="3" width="2" height="6"/><rect x="10" y="3" width="2" height="6"/></g>
+            <g transform="translate(6.3,16.2) scale(.3) translate(-6,-6)"><rect x="5" width="2" height="12"/><rect y="5" width="12" height="2"/><rect x="3" width="6" height="2"/><rect x="3" y="10" width="6" height="2"/><rect y="3" width="2" height="6"/><rect x="10" y="3" width="2" height="6"/></g>
+            <g transform="translate(23.7,16.2) scale(.3) translate(-6,-6)"><rect x="5" width="2" height="12"/><rect y="5" width="12" height="2"/><rect x="3" width="6" height="2"/><rect x="3" y="10" width="6" height="2"/><rect y="3" width="2" height="6"/><rect x="10" y="3" width="2" height="6"/></g>
+          </g>
+        </svg>
+        <div class="fold-shade"></div>
+        <div class="sheen"></div>
+      </div>
+    </div>
+    <div class="brand-wordmark">JARVIS<span class="ai-badge">A.I</span></div>
+    <div class="auth-tagline ka">თქვენი ქართული AI ასისტენტი</div>
+  </div>
+
+  <div class="auth-panel">
+    <div class="auth-title ka">შემოგვიერთდი</div>
+    <div class="auth-sub ka">დარეგისტრირდი და დაიწყე საუბარი JARVIS-თან</div>
+
+    <button class="btn-google" id="google-btn">
+      <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.6-6 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l5.7-5.7C34.6 6 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 16 19 13 24 13c3.1 0 5.8 1.1 8 3l5.7-5.7C34.6 6 29.6 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.5 0 10.4-1.9 14.1-5.1l-6.5-5.5C29.5 35.4 26.9 36 24 36c-5.2 0-9.6-3.3-11.2-7.9l-6.6 5.1C9.6 39.6 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.2 4.2-4.1 5.5l6.5 5.5C41.4 35.6 44 30.2 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>
+      <span>Continue with Google</span>
+    </button>
+
+    <div class="divider">OR</div>
+
+    <input type="email" class="input-email" placeholder="შეიყვანე ელ-ფოსტა" id="email-input">
+
+    <div class="auth-plans">
+      <div class="plan-card selected" data-plan="pro" onclick="selectPlan(this)">
+        <div class="plan-name ka">Pro</div>
+        <div class="plan-price">₾20 / თვე</div>
+      </div>
+      <div class="plan-card" data-plan="max" onclick="selectPlan(this)">
+        <div class="plan-name ka">Max</div>
+        <div class="plan-price">₾40 / თვე</div>
+      </div>
+    </div>
+
+    <button class="btn-primary ka" onclick="enterChat()">გაგრძელება</button>
+
+    <div class="auth-switch ka">უკვე გაქვს ანგარიში? <span onclick="enterChat()">შესვლა</span></div>
+    <div class="auth-legal ka">გაგრძელებით თქვენ eთანხმებით <a href="#">წესებსა და პირობებს</a></div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- CHAT VIEW -->
+<!-- ============================================================ -->
+<div class="view" id="view-chat">
+
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-top">
+      <button class="icon-btn" id="collapse-btn" title="ჩაკეცვა">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+      </button>
+      <div class="brand" style="font-size:14px;">
+        <div class="flag3d" style="width:24px;height:17px;">
+          <div class="cloth">
+            <svg viewBox="0 0 30 20" preserveAspectRatio="none">
+              <rect width="30" height="20" fill="#fff"/>
+              <rect x="12.6" width="4.8" height="20" fill="#c8102e"/>
+              <rect y="7.6" width="30" height="4.8" fill="#c8102e"/>
+              <g fill="#c8102e">
+                <g transform="translate(6.3,3.8) scale(.3) translate(-6,-6)"><rect x="5" width="2" height="12"/><rect y="5" width="12" height="2"/><rect x="3" width="6" height="2"/><rect x="3" y="10" width="6" height="2"/><rect y="3" width="2" height="6"/><rect x="10" y="3" width="2" height="6"/></g>
+                <g transform="translate(23.7,3.8) scale(.3) translate(-6,-6)"><rect x="5" width="2" height="12"/><rect y="5" width="12" height="2"/><rect x="3" width="6" height="2"/><rect x="3" y="10" width="6" height="2"/><rect y="3" width="2" height="6"/><rect x="10" y="3" width="2" height="6"/></g>
+                <g transform="translate(6.3,16.2) scale(.3) translate(-6,-6)"><rect x="5" width="2" height="12"/><rect y="5" width="12" height="2"/><rect x="3" width="6" height="2"/><rect x="3" y="10" width="6" height="2"/><rect y="3" width="2" height="6"/><rect x="10" y="3" width="2" height="6"/></g>
+                <g transform="translate(23.7,16.2) scale(.3) translate(-6,-6)"><rect x="5" width="2" height="12"/><rect y="5" width="12" height="2"/><rect x="3" width="6" height="2"/><rect x="3" y="10" width="6" height="2"/><rect y="3" width="2" height="6"/><rect x="10" y="3" width="2" height="6"/></g>
+              </g>
+            </svg>
+            <div class="fold-shade"></div>
+            <div class="sheen"></div>
+          </div>
+        </div>
+        <span class="brand-wordmark" style="font-size:14px;">JARVIS<span class="ai-badge" style="font-size:11px;">A.I</span></span>
+      </div>
+    </div>
+
+    <button class="new-chat-btn ka" onclick="startNewChat()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      ახალი ჩატი
+    </button>
+
+    <div class="chat-history" id="chat-history">
+      <div class="last-chat-item ka">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        ჯარვისის შექმნის ისტორია
+      </div>
+    </div>
+
+    <style>
+      .last-chat-item{
+        margin:0 14px 10px;
+        display:flex; align-items:center; gap:10px;
+        padding:11px 14px;
+        border-radius:12px;
+        border:1px solid var(--line);
+        background:var(--surface-2);
+        color:#c7c4cf;
+        font-weight:600; font-size:14px;
+        cursor:pointer;
+        transition:border-color .15s ease, color .15s ease;
+      }
+      .last-chat-item:hover{ border-color:var(--gold); color:var(--cream); }
+      .last-chat-item svg{ width:17px; height:17px; flex-shrink:0; }
+      body.light .last-chat-item{ background:#eee8da; color:#5a564c; border-color:#e4ded0; }
+      body.light .last-chat-item:hover{ color:#1c1a17; }
+    </style>
+
+
+    <div class="sidebar-bottom">
+      <button class="sidebar-action logout ka" onclick="logout()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        გამოსვლა
+      </button>
+    </div>
+  </div>
+
+  <!-- Main chat -->
+  <div class="chat-main">
+    <div class="chat-topbar">
+      <div class="topbar-left">
+        <button class="icon-btn" id="open-sidebar-btn" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+        </button>
+        <div class="brand-wordmark" style="font-size:15px;">JARVIS<span class="ai-badge" style="font-size:12px;">A.I</span></div>
+      </div>
+      <div class="flag3d" style="width:30px;height:21px;" title="JARVIS">
+        <div class="cloth">
+          <svg viewBox="0 0 30 20" preserveAspectRatio="none">
+            <rect width="30" height="20" fill="#fff"/>
+            <rect x="12.6" width="4.8" height="20" fill="#c8102e"/>
+            <rect y="7.6" width="30" height="4.8" fill="#c8102e"/>
+            <g fill="#c8102e">
+              <g transform="translate(6.3,3.8) scale(.3) translate(-6,-6)"><rect x="5" width="2" height="12"/><rect y="5" width="12" height="2"/><rect x="3" width="6" height="2"/><rect x="3" y="10" width="6" height="2"/><rect y="3" width="2" height="6"/><rect x="10" y="3" width="2" height="6"/></g>
+              <g transform="translate(23.7,3.8) scale(.3) translate(-6,-6)"><rect x="5" width="2" height="12"/><rect y="5" width="12" height="2"/><rect x="3" width="6" height="2"/><rect x="3" y="10" width="6" height="2"/><rect y="3" width="2" height="6"/><rect x="10" y="3" width="2" height="6"/></g>
+              <g transform="translate(6.3,16.2) scale(.3) translate(-6,-6)"><rect x="5" width="2" height="12"/><rect y="5" width="12" height="2"/><rect x="3" width="6" height="2"/><rect x="3" y="10" width="6" height="2"/><rect y="3" width="2" height="6"/><rect x="10" y="3" width="2" height="6"/></g>
+              <g transform="translate(23.7,16.2) scale(.3) translate(-6,-6)"><rect x="5" width="2" height="12"/><rect y="5" width="12" height="2"/><rect x="3" width="6" height="2"/><rect x="3" y="10" width="6" height="2"/><rect y="3" width="2" height="6"/><rect x="10" y="3" width="2" height="6"/></g>
+            </g>
+          </svg>
+          <div class="fold-shade"></div>
+          <div class="sheen"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-scroll" id="chat-scroll">
+      <div class="chat-empty" id="chat-empty">
+        <div class="flag3d empty-flag">
+          <div class="cloth">
+            <svg viewBox="0 0 30 20" preserveAspectRatio="none">
+              <rect width="30" height="20" fill="#fff"/>
+              <rect x="12.6" width="4.8" height="20" fill="#c8102e"/>
+              <rect y="7.6" width="30" height="4.8" fill="#c8102e"/>
+              <g fill="#c8102e">
+                <g transform="translate(6.3,3.8) scale(.3) translate(-6,-6)"><rect x="5" width="2" height="12"/><rect y="5" width="12" height="2"/><rect x="3" width="6" height="2"/><rect x="3" y="10" width="6" height="2"/><rect y="3" width="2" height="6"/><rect x="10" y="3" width="2" height="6"/></g>
+                <g transform="translate(23.7,3.8) scale(.3) translate(-6,-6)"><rect x="5" width="2" height="12"/><rect y="5" width="12" height="2"/><rect x="3" width="6" height="2"/><rect x="3" y="10" width="6" height="2"/><rect y="3" width="2" height="6"/><rect x="10" y="3" width="2" height="6"/></g>
+                <g transform="translate(6.3,16.2) scale(.3) translate(-6,-6)"><rect x="5" width="2" height="12"/><rect y="5" width="12" height="2"/><rect x="3" width="6" height="2"/><rect x="3" y="10" width="6" height="2"/><rect y="3" width="2" height="6"/><rect x="10" y="3" width="2" height="6"/></g>
+                <g transform="translate(23.7,16.2) scale(.3) translate(-6,-6)"><rect x="5" width="2" height="12"/><rect y="5" width="12" height="2"/><rect x="3" width="6" height="2"/><rect x="3" y="10" width="6" height="2"/><rect y="3" width="2" height="6"/><rect x="10" y="3" width="2" height="6"/></g>
+              </g>
+            </svg>
+            <div class="fold-shade"></div>
+            <div class="sheen"></div>
+          </div>
+        </div>
+        <div class="empty-greeting ka">Jarvis-ი გისმენთ</div>
+      </div>
+      <div class="chat-inner" id="chat-inner"></div>
+    </div>
+
+    <div class="attach-preview" id="attach-preview"></div>
+
+    <div class="chat-input-wrap">
+      <div class="chat-input-bar">
+        <button type="button" class="attach-btn" id="attach-btn" title="ფაილის ატვირთვა">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+        </button>
+        <input type="file" id="file-input" multiple accept="image/*,video/*,.pdf,.doc,.docx,.txt">
+        <input type="text" class="chat-input ka" id="chat-input" placeholder="დაწერეთ შეტყობინება...">
+        <button type="button" class="send-btn" id="send-btn">
+          <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ---------- View switching ----------
+  function show(viewId){
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById(viewId).classList.add('active');
+  }
+  function enterChat(){ show('view-chat'); }
+
+  // ---------- Plan selection ----------
+  function selectPlan(el){
+    document.querySelectorAll('.plan-card').forEach(c=>c.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  // ---------- Sidebar collapse ----------
+  const sidebar = document.getElementById('sidebar');
+  const collapseBtn = document.getElementById('collapse-btn');
+  const openSidebarBtn = document.getElementById('open-sidebar-btn');
+  collapseBtn.addEventListener('click', ()=>{
+    sidebar.classList.add('collapsed');
+    openSidebarBtn.style.display = 'flex';
+  });
+  openSidebarBtn.addEventListener('click', ()=>{
+    sidebar.classList.remove('collapsed');
+    openSidebarBtn.style.display = 'none';
+  });
+
+  // ---------- Theme toggle ----------
+  function toggleTheme(){
+    document.body.classList.toggle('light');
+    document.getElementById('theme-switch').classList.toggle('on');
+  }
+
+  // ---------- Logout ----------
+  function logout(){
+    show('view-auth');
+  }
+
+  // ---------- New chat ----------
+  const chatInner = document.getElementById('chat-inner');
+  const chatEmpty = document.getElementById('chat-empty');
+  function startNewChat(){
+    chatInner.innerHTML = '';
+    chatEmpty.style.display = 'flex';
+    document.querySelectorAll('.history-item').forEach(h=>h.classList.remove('active'));
+  }
+
+  // ---------- Sending messages ----------
+  const chatInput = document.getElementById('chat-input');
+  const sendBtn = document.getElementById('send-btn');
+  const chatScroll = document.getElementById('chat-scroll');
+
+  const aiReplies = [
+    "გასაგებია! ვამუშავებ თქვენს მოთხოვნას...",
+    "საინტერესო კითხვაა — ერთად გავარკვიოთ.",
+    "მზად არის! აი თქვენი პასუხი.",
+    "ვაანალიზებ... დასრულებულია."
+  ];
+
+  function addMsg(text, isUser){
+    if(chatEmpty.style.display !== 'none'){ chatEmpty.style.display = 'none'; }
+    const div = document.createElement('div');
+    div.className = 'msg ' + (isUser ? 'user' : 'ai') + ' ka';
+    div.textContent = text;
+    chatInner.appendChild(div);
+    chatScroll.scrollTop = chatScroll.scrollHeight;
+  }
+
+  function sendMessage(){
+    const text = chatInput.value.trim();
+    const files = pendingFiles.slice();
+    if(!text && files.length===0) return;
+
+    let msgText = text;
+    if(files.length){
+      msgText += (text? '\n' : '') + '📎 ' + files.map(f=>f.name).join(', ');
+    }
+    addMsg(msgText, true);
+    chatInput.value = '';
+    clearAttachments();
+
+    setTimeout(()=>{
+      addMsg(aiReplies[Math.floor(Math.random()*aiReplies.length)], false);
+    }, 900 + Math.random()*700);
+  }
+  sendBtn.addEventListener('click', sendMessage);
+  chatInput.addEventListener('keypress', e=>{ if(e.key==='Enter') sendMessage(); });
+
+  // ---------- File attach ----------
+  const attachBtn = document.getElementById('attach-btn');
+  const fileInput = document.getElementById('file-input');
+  const attachPreview = document.getElementById('attach-preview');
+  let pendingFiles = [];
+
+  attachBtn.addEventListener('click', ()=> fileInput.click());
+  fileInput.addEventListener('change', ()=>{
+    pendingFiles = Array.from(fileInput.files);
+    renderAttachments();
+  });
+  function renderAttachments(){
+    attachPreview.innerHTML = '';
+    pendingFiles.forEach((f,i)=>{
+      const chip = document.createElement('div');
+      chip.className = 'attach-chip ka';
+      chip.textContent = f.name + ' ✕';
+      chip.onclick = ()=>{ pendingFiles.splice(i,1); renderAttachments(); };
+      attachPreview.appendChild(chip);
+    });
+  }
+  function clearAttachments(){
+    pendingFiles = [];
+    fileInput.value = '';
+    attachPreview.innerHTML = '';
+  }
+
+  // history item click
+  document.querySelectorAll('.last-chat-item').forEach(item=>{
+    item.addEventListener('click', ()=>{
+      chatEmpty.style.display = 'none';
+      chatInner.innerHTML = '';
+      addMsg('მომიყევი ჯარვისის შექმნის ისტორია', true);
+      setTimeout(()=> addMsg('როდესაც მსოფლიოს უმსხვილესი კომპანიები ხელოვნურ ინტელექტში მილიარდებს დებდნენ, პატარა გუნდმა GBGE-ში გადაწყვიტა: საქართველოსაც უნდა ჰქონდეს საკუთარი, ქართულ ენაზე მოაზროვნე AI ასისტენტი. ასე დაიბადა JARVIS.', false), 600);
+    });
+  });
+</script>
+</body>
+</html>
