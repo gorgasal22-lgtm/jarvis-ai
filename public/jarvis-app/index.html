@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>JARVIS A.I</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Noto+Sans+Georgian:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  :root{
+    --bg:#0a0a0c;
+    --surface:#16151a;
+    --surface-2:#1d1c22;
+    --line:#2a2930;
+    --cream:#f3ede1;
+    --muted:#8b8894;
+    --red:#c8102e;
+    --red-dim:#7a1f2b;
+    --gold:#d4af37;
+    --white:#ffffff;
+    --radius:16px;
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html{ height:100%; }
+  body{
+    font-family:'Space Grotesk', sans-serif;
+    background:var(--bg);
+    color:var(--cream);
+    height:100vh;
+    height:100dvh;
+    width:100vw;
+    overflow:hidden;
+  }
+  .ka{ font-family:'Noto Sans Georgian','Space Grotesk',sans-serif; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important;}
+  }
+
+  /* ===================== FLAG ===================== */
+  .flag3d{ width:34px; height:24px; perspective:320px; flex-shrink:0; }
+  .flag3d .cloth{
+    width:100%; height:100%; position:relative; transform-style:preserve-3d;
+    transform-origin:left center; animation:waveFlag 3.6s ease-in-out infinite;
+    border-radius:2px; overflow:hidden; box-shadow:0 3px 10px rgba(0,0,0,.55), 0 1px 3px rgba(0,0,0,.4);
+  }
+  .flag3d svg{ width:100%; height:100%; display:block; }
+  .flag3d .fold-shade{
+    position:absolute; inset:0;
+    background:linear-gradient(100deg, rgba(0,0,0,.38) 0%, rgba(0,0,0,0) 16%, rgba(255,255,255,.18) 34%, rgba(0,0,0,0) 52%, rgba(0,0,0,.30) 74%, rgba(0,0,0,0) 92%);
+    mix-blend-mode:multiply; animation:foldMove 3.6s ease-in-out infinite; pointer-events:none;
+  }
+  .flag3d .sheen{
+    position:absolute; inset:0;
+    background:linear-gradient(100deg, rgba(255,255,255,0) 32%, rgba(255,255,255,.45) 48%, rgba(255,255,255,0) 64%);
+    mix-blend-mode:overlay; animation:sheenMove 3.6s ease-in-out infinite; pointer-events:none;
+  }
+  @keyframes waveFlag{
+    0%   { transform: rotateY(0deg) rotateX(3deg); }
+    25%  { transform: rotateY(22deg) rotateX(-4deg) skewY(2.2deg); }
+    50%  { transform: rotateY(0deg) rotateX(3deg); }
+    75%  { transform: rotateY(-22deg) rotateX(-4deg) skewY(-2.2deg); }
+    100% { transform: rotateY(0deg) rotateX(3deg); }
+  }
+  @keyframes foldMove{ 0%{ transform:translateX(-25%); } 50%{ transform:translateX(25%); } 100%{ transform:translateX(-25%); } }
+  @keyframes sheenMove{ 0%{ transform:translateX(-30%); } 50%{ transform:translateX(30%); } 100%{ transform:translateX(-30%); } }
+
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .brand-wordmark{
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:19px;
+    letter-spacing:.5px; color:var(--cream); display:flex; align-items:baseline; gap:6px;
+  }
+  .brand-wordmark .ai-badge{
+    font-size:13px; font-weight:800; letter-spacing:1.2px;
+    background:var(--red); color:var(--white); padding:3px 9px; border-radius:6px; transform:translateY(-1px);
+  }
+
+  /* ===================== VIEWS ===================== */
+  .view{ display:none; height:100vh; height:100dvh; width:100vw; }
+  .view.active{ display:flex; }
+
+  /* ===================== AUTH ===================== */
+  #view-auth{
+    flex-direction:column; align-items:center; justify-content:flex-end; position:relative;
+    background: radial-gradient(ellipse 700px 500px at 50% 8%, rgba(200,16,46,.18), transparent 60%),
+                linear-gradient(180deg, #0a0a0c 0%, #0d0c10 55%, #121116 100%);
+  }
+  .auth-glow{
+    position:absolute; top:0; left:0; right:0; height:55%;
+    background: radial-gradient(circle at 30% 0%, rgba(212,175,55,.07), transparent 55%),
+                radial-gradient(circle at 75% 10%, rgba(200,16,46,.10), transparent 50%);
+    pointer-events:none;
+  }
+  .auth-top{
+    position:absolute; top:48px; left:0; right:0;
+    display:flex; flex-direction:column; align-items:center; gap:18px;
+  }
+  .auth-top .flag3d{ width:56px; height:40px; }
+  .auth-top .brand-wordmark{ font-size:26px; }
+  .auth-tagline{ font-family:'Noto Sans Georgian',sans-serif; color:var(--muted); font-size:14px; letter-spacing:.5px; }
+
+  .auth-panel{
+    width:100%; max-width:460px; padding:0 24px 56px;
+    display:flex; flex-direction:column; gap:14px; z-index:2;
+  }
+  .auth-title{ font-family:'Noto Sans Georgian',sans-serif; font-size:22px; font-weight:700; text-align:center; margin-bottom:6px; color:var(--cream); }
+  .auth-sub{ font-family:'Noto Sans Georgian',sans-serif; text-align:center; color:var(--muted); font-size:13.5px; margin-bottom:18px; }
+
+  .btn-google{
+    width:100%; padding:16px 20px; background:var(--white); color:#1a1a1a;
+    border:none; border-radius:30px; font-family:'Noto Sans Georgian',sans-serif;
+    font-size:16px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:12px;
+    cursor:pointer; transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .btn-google:active{ transform:scale(.98); }
+  .btn-google svg{ width:20px; height:20px; }
+
+  .divider{ display:flex; align-items:center; gap:14px; color:var(--muted); font-size:12px; letter-spacing:2px; margin:6px 0; }
+  .divider::before,.divider::after{ content:''; flex:1; height:1px; background:var(--line); }
+
+  .input-email{
+    width:100%; padding:16px 20px; background:var(--surface); border:1px solid var(--line);
+    border-radius:30px; color:var(--cream); font-family:'Noto Sans Georgian',sans-serif;
+    font-size:15px; outline:none; transition:border-color .2s ease, box-shadow .2s ease;
+  }
+  .input-email::placeholder{ color:#5e5c66; }
+  .input-email:focus{ border-color:var(--red); box-shadow:0 0 0 3px rgba(200,16,46,.18); }
+
+  .btn-primary{
+    width:100%; padding:16px 20px;
+    background:linear-gradient(135deg, var(--red) 0%, var(--red-dim) 100%);
+    border:none; border-radius:30px; color:var(--white);
+    font-family:'Noto Sans Georgian',sans-serif; font-size:16px; font-weight:700;
+    cursor:pointer; transition:transform .15s ease;
+  }
+  .btn-primary:active{ transform:scale(.98); }
+
+  .auth-plans{ display:flex; gap:10px; margin-top:8px; }
+  .plan-card{
+    flex:1; border:1px solid var(--line); background:var(--surface);
+    border-radius:14px; padding:14px; cursor:pointer; transition:border-color .2s ease, background .2s ease;
+  }
+  .plan-card.selected{ border-color:var(--gold); background:linear-gradient(180deg, rgba(212,175,55,.10), rgba(212,175,55,.02)); }
+  .plan-name{ font-family:'Noto Sans Georgian',sans-serif; font-weight:700; font-size:14px; }
+  .plan-price{ font-size:13px; color:var(--gold); margin-top:4px; font-weight:600; }
+
+  .auth-legal{ text-align:center; font-size:11px; color:#5e5c66; margin-top:10px; font-family:'Noto Sans Georgian',sans-serif; }
+  .auth-legal a{ color:var(--muted); }
+  .auth-switch{ text-align:center; font-family:'Noto Sans Georgian',sans-serif; font-size:13.5px; color:var(--muted); margin-top:2px; }
+  .auth-switch span{ color:var(--gold); cursor:pointer; font-weight:600; }
+
+  /* ===================== CHAT ===================== */
+  #view-chat{ flex-direction:row; background:var(--bg); }
+
+  .sidebar{
+    width:280px; background:var(--surface); border-right:1px solid var(--line);
+    display:flex; flex-direction:column; flex-shrink:0; transition:margin-left .25s ease;
+  }
+  .sidebar.collapsed{ margin-left:-280px; }
+  .sidebar-top{ padding:16px 14px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--line); }
+
+  .icon-btn{
+    width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+    background:transparent; border:none; cursor:pointer; color:var(--cream); transition:background .15s ease;
+  }
+  .icon-btn:hover{ background:var(--surface-2); }
+  .icon-btn svg{ width:20px; height:20px; }
+
+  .new-chat-btn{
+    margin:14px; display:flex; align-items:center; gap:10px; padding:11px 14px;
+    border-radius:12px; border:1px solid rgba(0,200,120,.35); background:rgba(0,200,120,.08);
+    color:#3ddc97; font-family:'Noto Sans Georgian',sans-serif; font-weight:600; font-size:14px;
+    cursor:pointer; transition:background .15s ease, transform .15s ease;
+  }
+  .new-chat-btn:hover{ background:rgba(0,200,120,.16); }
+  .new-chat-btn:active{ transform:scale(.98); }
+  .new-chat-btn svg{ width:18px; height:18px; flex-shrink:0; }
+
+  .chat-history{ flex:1; overflow-y:auto; padding:4px 10px; display:flex; flex-direction:column; gap:2px; }
+  .history-label{ font-size:11px; color:#5e5c66; letter-spacing:1.5px; text-transform:uppercase; padding:14px 10px 6px; }
+  .history-item{
+    padding:10px 12px; border-radius:10px; font-family:'Noto Sans Georgian',sans-serif;
+    font-size:13.5px; color:#c7c4cf; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    cursor:pointer; transition:background .15s ease;
+  }
+  .history-item:hover{ background:var(--surface-2); color:var(--cream); }
+  .history-item.active{ background:var(--surface-2); color:var(--cream); }
+
+  .last-chat-item{
+    margin:0 14px 10px; display:flex; align-items:center; gap:10px; padding:11px 14px;
+    border-radius:12px; border:1px solid var(--line); background:var(--surface-2);
+    color:#c7c4cf; font-weight:600; font-size:14px; cursor:pointer;
+    transition:border-color .15s ease, color .15s ease;
+    font-family:'Noto Sans Georgian',sans-serif;
+  }
+  .last-chat-item:hover{ border-color:var(--gold); color:var(--cream); }
+  .last-chat-item svg{ width:17px; height:17px; flex-shrink:0; }
+
+  .sidebar-bottom{ border-top:1px solid var(--line); padding:12px; display:flex; flex-direction:column; gap:4px; }
+  .sidebar-action{
+    display:flex; align-items:center; gap:12px; padding:10px; border-radius:10px;
+    font-family:'Noto Sans Georgian',sans-serif; font-size:13.5px; color:#c7c4cf;
+    cursor:pointer; background:none; border:none; width:100%; text-align:left;
+    transition:background .15s ease, color .15s ease;
+  }
+  .sidebar-action:hover{ background:var(--surface-2); color:var(--cream); }
+  .sidebar-action svg{ width:18px; height:18px; flex-shrink:0; }
+  .sidebar-action.logout{ color:#e0566c; }
+  .sidebar-action.logout:hover{ background:rgba(224,86,108,.1); color:#e0566c; }
+
+  .theme-toggle{ display:flex; align-items:center; justify-content:space-between; padding:10px; border-radius:10px; }
+  .theme-toggle .label{ display:flex; align-items:center; gap:12px; font-family:'Noto Sans Georgian',sans-serif; font-size:13.5px; color:#c7c4cf; }
+
+  /* Day/Night toggle */
+  .daynight-toggle{
+    width:54px; height:28px; border-radius:30px; position:relative; cursor:pointer; flex-shrink:0;
+    background:linear-gradient(135deg,#1c2b4a 0%, #0a0f1f 100%);
+    border:1px solid rgba(255,255,255,.08); overflow:hidden; transition:background .35s ease;
+  }
+  .daynight-toggle.is-light{ background:linear-gradient(135deg,#ffd76b 0%, #f5a623 100%); }
+  .daynight-toggle .dn-stars{ position:absolute; inset:0; opacity:1; transition:opacity .3s ease; }
+  .daynight-toggle.is-light .dn-stars{ opacity:0; }
+  .daynight-toggle .dn-star{ position:absolute; width:2px; height:2px; background:#fff; border-radius:50%; }
+  .daynight-toggle .dn-knob{
+    position:absolute; top:2px; left:2px; width:22px; height:22px; border-radius:50%;
+    background:#f3ede1; box-shadow:0 2px 6px rgba(0,0,0,.3); transition:transform .3s ease, background .3s ease;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .daynight-toggle.is-light .dn-knob{ transform:translateX(26px); background:#fff7e0; }
+  .daynight-toggle .dn-knob svg{ width:13px; height:13px; transition:opacity .2s ease; }
+  .daynight-toggle .dn-icon-moon{ opacity:1; position:absolute; }
+  .daynight-toggle .dn-icon-sun{ opacity:0; position:absolute; }
+  .daynight-toggle.is-light .dn-icon-moon{ opacity:0; }
+  .daynight-toggle.is-light .dn-icon-sun{ opacity:1; }
+
+  /* Chat main */
+  .chat-main{ flex:1; display:flex; flex-direction:column; min-width:0; }
+  .chat-topbar{
+    height:60px; flex-shrink:0; display:flex; align-items:center; justify-content:space-between;
+    padding:0 18px; border-bottom:1px solid var(--line); background:var(--bg);
+  }
+  .topbar-left{ display:flex; align-items:center; gap:10px; }
+
+  .chat-scroll{ flex:1; overflow-y:auto; padding:30px 18px 10px; display:flex; flex-direction:column; align-items:center; }
+  .chat-scroll::-webkit-scrollbar{ width:6px; }
+  .chat-scroll::-webkit-scrollbar-thumb{ background:var(--line); border-radius:3px; }
+  .chat-inner{ width:100%; max-width:720px; display:flex; flex-direction:column; gap:18px; }
+
+  .chat-empty{
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+    width:100%; max-width:720px; gap:14px; padding-bottom:18px;
+  }
+  .empty-flag{ width:64px; height:46px; }
+  .empty-greeting{ font-family:'Noto Sans Georgian',sans-serif; font-size:21px; font-weight:600; color:var(--gold); text-align:center; letter-spacing:.2px; }
+
+  /* Messages */
+  .msg{
+    max-width:82%; padding:13px 17px; border-radius:16px;
+    font-family:'Noto Sans Georgian',sans-serif; font-size:14.5px; line-height:1.65;
+    animation:msgIn .25s ease-out; white-space:pre-wrap; word-break:break-word;
+  }
+  @keyframes msgIn{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+  .msg.ai{ align-self:flex-start; background:var(--surface); border:1px solid var(--line); border-bottom-left-radius:4px; }
+  .msg.user{ align-self:flex-end; background:var(--red-dim); color:var(--cream); border-bottom-right-radius:4px; }
+
+  /* Typing indicator */
+  .typing-indicator{ align-self:flex-start; background:var(--surface); border:1px solid var(--line); border-bottom-left-radius:4px; border-radius:16px; padding:14px 18px; display:flex; gap:5px; align-items:center; }
+  .typing-dot{ width:7px; height:7px; border-radius:50%; background:var(--gold); opacity:0.4; animation:typingBounce 1.2s infinite; }
+  .typing-dot:nth-child(2){ animation-delay:.2s; }
+  .typing-dot:nth-child(3){ animation-delay:.4s; }
+  @keyframes typingBounce{ 0%,60%,100%{ transform:translateY(0); opacity:.4; } 30%{ transform:translateY(-5px); opacity:1; } }
+
+  /* Input */
+  .chat-input-wrap{ padding:14px 18px 20px; display:flex; justify-content:center; }
+  .chat-input-bar{
+    width:100%; max-width:720px; display:flex; align-items:center; gap:8px;
+    background:var(--surface); border:1px solid var(--line); border-radius:28px; padding:8px;
+  }
+  .chat-input-bar:focus-within{ border-color:var(--red); box-shadow:0 0 0 3px rgba(200,16,46,.15); }
+
+  .attach-btn{
+    width:40px; height:40px; border-radius:50%; background:var(--surface-2); border:none;
+    cursor:pointer; display:flex; align-items:center; justify-content:center;
+    color:var(--cream); flex-shrink:0; transition:background .15s ease;
+  }
+  .attach-btn:hover{ background:#27262e; }
+  .attach-btn svg{ width:19px; height:19px; }
+
+  .chat-input{
+    flex:1; background:transparent; border:none; outline:none;
+    color:var(--cream); font-family:'Noto Sans Georgian',sans-serif; font-size:15px; padding:8px 4px;
+  }
+  .chat-input::placeholder{ color:#5e5c66; }
+
+  .send-btn{
+    width:40px; height:40px; border-radius:50%; flex-shrink:0;
+    background:linear-gradient(135deg, var(--red), var(--red-dim));
+    border:none; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    transition:transform .15s ease, opacity .15s ease;
+  }
+  .send-btn:active{ transform:scale(.92); }
+  .send-btn:disabled{ opacity:.5; cursor:not-allowed; }
+  .send-btn svg{ width:18px; height:18px; fill:white; }
+
+  #file-input{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+  .attach-preview{ display:flex; gap:6px; flex-wrap:wrap; padding:0 18px 8px; max-width:720px; margin:0 auto; width:100%; }
+  .attach-chip{
+    font-family:'Noto Sans Georgian',sans-serif; font-size:12px;
+    background:var(--surface-2); border:1px solid var(--line); border-radius:8px;
+    padding:5px 10px; color:var(--muted); cursor:pointer;
+  }
+
+  /* Paywall */
+  .paywall-card{
+    width:100%; max-width:480px; margin:10px auto; background:var(--surface);
+    border:1px solid var(--gold); border-radius:18px; padding:22px 20px;
+    display:flex; flex-direction:column; gap:14px; animation:msgIn .25s ease-out;
+  }
+  .paywall-title{ font-family:'Noto Sans Georgian',sans-serif; font-size:16px; font-weight:700; color:var(--gold); text-align:center; }
+  .paywall-sub{ font-family:'Noto Sans Georgian',sans-serif; font-size:13px; color:var(--muted); text-align:center; }
+  .paywall-plans{ display:flex; gap:10px; }
+  .paywall-plan{
+    flex:1; border:1px solid var(--line); background:var(--surface-2);
+    border-radius:14px; padding:14px; text-align:center; cursor:pointer;
+    transition:border-color .2s ease, transform .15s ease;
+  }
+  .paywall-plan:hover{ border-color:var(--gold); transform:translateY(-2px); }
+  .paywall-plan .name{ font-family:'Noto Sans Georgian',sans-serif; font-weight:700; font-size:14px; }
+  .paywall-plan .price{ font-size:13px; color:var(--gold); margin-top:4px; font-weight:600; }
+  .paywall-plan .features{ font-size:11px; color:var(--muted); margin-top:6px; font-family:'Noto Sans Georgian',sans-serif; line-height:1.5; }
+  .paywall-timer{ font-family:'Noto Sans Georgian',sans-serif; font-size:12px; color:#5e5c66; text-align:center; }
+
+  /* Responsive */
+  @media (max-width: 860px){
+    #view-chat{ position:relative; }
+    .sidebar{
+      position:fixed; top:0; left:0; bottom:0; z-index:40;
+      transform:translateX(0); transition:transform .25s ease;
+    }
+    .sidebar.collapsed{ margin-left:0; transform:translateX(-100%); }
+    .chat-main{ width:100%; }
+    .chat-topbar{ padding:0 14px; }
+    .chat-scroll{ padding:18px 12px 10px; }
+    .chat-input-wrap{ padding:10px 12px 16px; }
+    .msg{ max-width:90%; font-size:14px; }
+    .auth-top{ top:28px; }
+    .auth-top .flag3d{ width:46px; height:33px; }
+    .auth-top .brand-wordmark{ font-size:22px; }
+    .auth-panel{ padding:0 18px 40px; max-width:100%; }
+    .auth-title{ font-size:19px; }
+    .empty-greeting{ font-size:18px; padding:0 10px; }
+  }
+  @media (min-width: 861px){
+    .chat-scroll{ padding:40px 24px 14px; }
+    .chat-inner{ max-width:760px; }
+    .chat-input-bar{ max-width:760px; }
+  }
+
+  /* Light theme */
+  body.light{ background:#f4f1ea; color:#1c1a17; }
+  body.light #view-chat{ background:#f4f1ea; }
+  body.light .sidebar{ background:#ffffff; border-color:#e4ded0; }
+  body.light .sidebar-top, body.light .sidebar-bottom{ border-color:#e4ded0; }
+  body.light .icon-btn{ color:#1c1a17; }
+  body.light .icon-btn:hover{ background:#eee8da; }
+  body.light .history-item{ color:#5a564c; }
+  body.light .history-item:hover, body.light .history-item.active{ background:#eee8da; color:#1c1a17; }
+  body.light .sidebar-action{ color:#5a564c; }
+  body.light .sidebar-action:hover{ background:#eee8da; color:#1c1a17; }
+  body.light .chat-topbar{ background:#f4f1ea; border-color:#e4ded0; }
+  body.light .brand-wordmark{ color:#1c1a17; }
+  body.light .msg.ai{ background:#ffffff; border-color:#e4ded0; color:#1c1a17; }
+  body.light .msg.user{ background:#c8102e; color:#fff; }
+  body.light .chat-input-bar{ background:#ffffff; border-color:#e4ded0; }
+  body.light .attach-btn{ background:#eee8da; color:#1c1a17; }
+  body.light .chat-input{ color:#1c1a17; }
+  body.light .history-label{ color:#a59f8e; }
+  body.light .chat-input::placeholder{ color:#a59f8e; }
+  body.light .last-chat-item{ background:#eee8da; color:#5a564c; border-color:#e4ded0; }
+  body.light .last-chat-item:hover{ color:#1c1a17; }
+  body.light .paywall-card{ background:#ffffff; }
+  body.light .paywall-plan{ background:#f4f1ea; border-color:#e4ded0; }
+  body.light .typing-indicator{ background:#ffffff; border-color:#e4ded0; }
+</style>
+</head>
+<body>
+
+<!-- ============================================================ -->
+<!-- AUTH VIEW -->
+<!-- ============================================================ -->
+<div class="view active" id="view-auth">
+  <div class="auth-glow"></div>
+  <div class="auth-top">
+    <div class="flag3d">
+      <div class="cloth">
+        <svg viewBox="0 0 30 20" preserveAspectRatio="none">
+          <rect width="30" height="20" fill="#fff"/>
+          <rect x="12.6" width="4.8" height="20" fill="#c8102e"/>
+          <rect y="7.6" width="30" height="4.8" fill="#c8102e"/>
+          <g fill="#c8102e">
+            <g transform="translate(6.3,3.8) scale(.3) translate(-6,-6)"><rect x="5" width="2" height="12"/><rect y="5" width="12" height="2"/><rect x="3" width="6" height="2"/><rect x="3" y="10" width="6" height="2"/><rect y="3" width="2" height="6"/><rect x="10" y="3" width="2" height="6"/></g>
+            <g transform="translate(23.7,3.8) scale(.3) translate(-6,-6)"><rect x="5" width="2" height="12"/><rect y="5" width="12" height="2"/><rect x="3" width="6" height="2"/><rect x="3" y="10" width="6" height="2"/><rect y="3" width="2" height="6"/><rect x="10" y="3" width="2" height="6"/></g>
+            <g transform="translate(6.3,16.2) scale(.3) translate(-6,-6)"><rect x="5" width="2" height="12"/><rect y="5" width="12" height="2"/><rect x="3" width="6" height="2"/><rect x="3" y="10" width="6" height="2"/><rect y="3" width="2" height="6"/><rect x="10" y="3" width="2" height="6"/></g>
+            <g transform="translate(23.7,16.2) scale(.3) translate(-6,-6)"><rect x="5" width="2" height="12"/><rect y="5" width="12" height="2"/><rect x="3" width="6" height="2"/><rect x="3" y="10" width="6" height="2"/><rect y="3" width="2" height="6"/><rect x="10" y="3" width="2" height="6"/></g>
+          </g>
+        </svg>
+        <div class="fold-shade"></div><div class="sheen"></div>
+      </div>
+    </div>
+    <div class="brand-wordmark">JARVIS<span class="ai-badge">A.I</span></div>
+    <div class="auth-tagline ka">თქვენი ქართული AI ასისტენტი</div>
+  </div>
+
+  <div class="auth-panel">
+    <div class="auth-title ka">შემოგვიერთდი</div>
+    <div class="auth-sub ka">დარეგისტრირდი და დაიწყე საუბარი JARVIS-თან</div>
+
+    <button class="btn-google" id="google-btn">
+      <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.6-6 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l5.7-5.7C34.6 6 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 16 19 13 24 13c3.1 0 5.8 1.1 8 3l5.7-5.7C34.6 6 29.6 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.5 0 10.4-1.9 14.1-5.1l-6.5-5.5C29.5 35.4 26.9 36 24 36c-5.2 0-9.6-3.3-11.2-7.9l-6.6 5.1C9.6 39.6 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.2 4.2-4.1 5.5l6.5 5.5C41.4 35.6 44 30.2 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>
+      <span>Continue with Google</span>
+    </button>
+
+    <div class="divider">OR</div>
+
+    <input type="email" class="input-email" placeholder="შეიყვანე ელ-ფოსტა" id="email-input">
+    <div id="auth-error" class="ka" style="display:none; color:#e0566c; font-size:12.5px; text-align:center; margin-top:-6px;"></div>
+
+    <div class="auth-plans">
+      <div class="plan-card selected" data-plan="pro" onclick="selectPlan(this)">
+        <div class="plan-name ka">Pro</div>
+        <div class="plan-price">₾20 / თვე</div>
+      </div>
+      <div class="plan-card" data-plan="max" onclick="selectPlan(this)">
+        <div class="plan-name ka">Max</div>
+        <div class="plan-price">₾40 / თვე</div>
+      </div>
+    </div>
+
+    <button class="btn-primary ka" id="continue-btn" onclick="handleContinue()">გაგრძელება</button>
+    <div class="auth-switch ka">უკვე გაქვს ანგარიში? <span onclick="handleContinue()">შესვლა</span></div>
+    <div class="auth-legal ka">გაგრძელებით თქვენ ეთანხმებით <a href="#">წესებსა და პირობებს</a></div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- CHAT VIEW -->
+<!-- ============================================================ -->
+<div class="view" id="view-chat">
+
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-top">
+      <button class="icon-btn" id="collapse-btn" title="ჩაკეცვა">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+      </button>
+      <div class="brand" style="font-size:14px;">
+        <div class="flag3d" style="width:24px;height:17px;">
+          <div class="cloth">
+            <svg viewBox="0 0 30 20" preserveAspectRatio="none">
+              <rect width="30" height="20" fill="#fff"/>
+              <rect x="12.6" width="4.8" height="20" fill="#c8102e"/>
+              <rect y="7.6" width="30" height="4.8" fill="#c8102e"/>
+              <g fill="#c8102e">
+                <g transform="translate(6.3,3.8) scale(.3) translate(-6,-6)"><rect x="5" width="2" height="12"/><rect y="5" width="12" height="2"/><rect x="3" width="6" height="2"/><rect x="3" y="10" width="6" height="2"/><rect y="3" width="2" height="6"/><rect x="10" y="3" width="2" height="6"/></g>
+                <g transform="translate(23.7,3.8) scale(.3) translate(-6,-6)"><rect x="5" width="2" height="12"/><rect y="5" width="12" height="2"/><rect x="3" width="6" height="2"/><rect x="3" y="10" width="6" height="2"/><rect y="3" width="2" height="6"/><rect x="10" y="3" width="2" height="6"/></g>
+                <g transform="translate(6.3,16.2) scale(.3) translate(-6,-6)"><rect x="5" width="2" height="12"/><rect y="5" width="12" height="2"/><rect x="3" width="6" height="2"/><rect x="3" y="10" width="6" height="2"/><rect y="3" width="2" height="6"/><rect x="10" y="3" width="2" height="6"/></g>
+                <g transform="translate(23.7,16.2) scale(.3) translate(-6,-6)"><rect x="5" width="2" height="12"/><rect y="5" width="12" height="2"/><rect x="3" width="6" height="2"/><rect x="3" y="10" width="6" height="2"/><rect y="3" width="2" height="6"/><rect x="10" y="3" width="2" height="6"/></g>
+              </g>
+            </svg>
+            <div class="fold-shade"></div><div class="sheen"></div>
+          </div>
+        </div>
+        <span class="brand-wordmark" style="font-size:14px;">JARVIS<span class="ai-badge" style="font-size:11px;">A.I</span></span>
+      </div>
+    </div>
+
+    <button class="new-chat-btn ka" onclick="startNewChat()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      ახალი ჩატი
+    </button>
+
+    <div class="chat-history" id="chat-history">
+      <div class="last-chat-item" onclick="loadJarvisStory()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        ჯარვისის შექმნის ისტორია
+      </div>
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="theme-toggle">
+        <span class="label ka">ღამე / დღე</span>
+        <div class="daynight-toggle" id="daynight-toggle" onclick="toggleTheme()" role="button" aria-label="Toggle theme">
+          <div class="dn-stars">
+            <span class="dn-star" style="top:6px; left:10px;"></span>
+            <span class="dn-star" style="top:14px; left:18px;"></span>
+            <span class="dn-star" style="top:9px; left:24px;"></span>
+            <span class="dn-star" style="top:18px; left:30px;"></span>
+          </div>
+          <div class="dn-knob">
+            <svg class="dn-icon-moon" viewBox="0 0 24 24" fill="#1c2b4a"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"/></svg>
+            <svg class="dn-icon-sun" viewBox="0 0 24 24" fill="#f5a623"><circle cx="12" cy="12" r="4"/><path stroke="#f5a623" stroke-width="2" d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+          </div>
+        </div>
+      </div>
+      <button class="sidebar-action logout ka" onclick="logout()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        გამოსვლა
+      </button>
+    </div>
+  </div>
+
+  <!-- Main chat -->
+  <div class="chat-main">
+    <div class="chat-topbar">
+      <div class="topbar-left">
+        <button class="icon-btn" id="open-sidebar-btn" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+        </button>
+        <div class="brand-wordmark" style="font-size:15px;">JARVIS<span class="ai-badge" style="font-size:12px;">A.I</span></div>
+      </div>
+      <div class="flag3d" style="width:30px;height:21px;">
+        <div class="cloth">
+          <svg viewBox="0 0 30 20" preserveAspectRatio="none">
+            <rect width="30" height="20" fill="#fff"/>
+            <rect x="12.6" width="4.8" height="20" fill="#c8102e"/>
+            <rect y="7.6" width="30" height="4.8" fill="#c8102e"/>
+            <g fill="#c8102e">
+              <g transform="translate(6.3,3.8) scale(.3) translate(-6,-6)"><rect x="5" width="2" height="12"/><rect y="5" width="12" height="2"/><rect x="3" width="6" height="2"/><rect x="3" y="10" width="6" height="2"/><rect y="3" width="2" height="6"/><rect x="10" y="3" width="2" height="6"/></g>
+              <g transform="translate(23.7,3.8) scale(.3) translate(-6,-6)"><rect x="5" width="2" height="12"/><rect y="5" width="12" height="2"/><rect x="3" width="6" height="2"/><rect x="3" y="10" width="6" height="2"/><rect y="3" width="2" height="6"/><rect x="10" y="3" width="2" height="6"/></g>
+              <g transform="translate(6.3,16.2) scale(.3) translate(-6,-6)"><rect x="5" width="2" height="12"/><rect y="5" width="12" height="2"/><rect x="3" width="6" height="2"/><rect x="3" y="10" width="6" height="2"/><rect y="3" width="2" height="6"/><rect x="10" y="3" width="2" height="6"/></g>
+              <g transform="translate(23.7,16.2) scale(.3) translate(-6,-6)"><rect x="5" width="2" height="12"/><rect y="5" width="12" height="2"/><rect x="3" width="6" height="2"/><rect x="3" y="10" width="6" height="2"/><rect y="3" width="2" height="6"/><rect x="10" y="3" width="2" height="6"/></g>
+            </g>
+          </svg>
+          <div class="fold-shade"></div><div class="sheen"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-scroll" id="chat-scroll">
+      <div class="chat-empty" id="chat-empty">
+        <div class="flag3d empty-flag">
+          <div class="cloth">
+            <svg viewBox="0 0 30 20" preserveAspectRatio="none">
+              <rect width="30" height="20" fill="#fff"/>
+              <rect x="12.6" width="4.8" height="20" fill="#c8102e"/>
+              <rect y="7.6" width="30" height="4.8" fill="#c8102e"/>
+              <g fill="#c8102e">
+                <g transform="translate(6.3,3.8) scale(.3) translate(-6,-6)"><rect x="5" width="2" height="12"/><rect y="5" width="12" height="2"/><rect x="3" width="6" height="2"/><rect x="3" y="10" width="6" height="2"/><rect y="3" width="2" height="6"/><rect x="10" y="3" width="2" height="6"/></g>
+                <g transform="translate(23.7,3.8) scale(.3) translate(-6,-6)"><rect x="5" width="2" height="12"/><rect y="5" width="12" height="2"/><rect x="3" width="6" height="2"/><rect x="3" y="10" width="6" height="2"/><rect y="3" width="2" height="6"/><rect x="10" y="3" width="2" height="6"/></g>
+                <g transform="translate(6.3,16.2) scale(.3) translate(-6,-6)"><rect x="5" width="2" height="12"/><rect y="5" width="12" height="2"/><rect x="3" width="6" height="2"/><rect x="3" y="10" width="6" height="2"/><rect y="3" width="2" height="6"/><rect x="10" y="3" width="2" height="6"/></g>
+                <g transform="translate(23.7,16.2) scale(.3) translate(-6,-6)"><rect x="5" width="2" height="12"/><rect y="5" width="12" height="2"/><rect x="3" width="6" height="2"/><rect x="3" y="10" width="6" height="2"/><rect y="3" width="2" height="6"/><rect x="10" y="3" width="2" height="6"/></g>
+              </g>
+            </svg>
+            <div class="fold-shade"></div><div class="sheen"></div>
+          </div>
+        </div>
+        <div class="empty-greeting ka">Jarvis-ი გისმენთ</div>
+      </div>
+      <div class="chat-inner" id="chat-inner"></div>
+    </div>
+
+    <div class="attach-preview" id="attach-preview"></div>
+
+    <div class="chat-input-wrap">
+      <div class="chat-input-bar">
+        <button type="button" class="attach-btn" id="attach-btn" title="ფაილის ატვირთვა">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+        </button>
+        <input type="file" id="file-input" multiple accept="image/*,video/*,.pdf,.doc,.docx,.txt">
+        <input type="text" class="chat-input ka" id="chat-input" placeholder="დაწერეთ შეტყობინება...">
+        <button type="button" class="send-btn" id="send-btn">
+          <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// =====================================================================
+// CONFIGURATION — შეცვალე შენი მნიშვნელობებით
+// =====================================================================
+const SUPABASE_URL = 'https://tnirrhlxjpyifcgpwbjq.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_n9jDFTNIycBDQCXSbOqm8g_PNU71r0L';
+
+// Supabase Edge Function URL — deploy-ის შემდეგ შეცვალე
+const JARVIS_FUNCTION_URL = SUPABASE_URL + '/functions/v1/Jarvis-chat';
+
+// Free trial config
+const FREE_LIMIT = 5;
+const RESET_MS   = 8 * 60 * 60 * 1000; // 8 საათი
+
+// =====================================================================
+// SUPABASE INIT
+// =====================================================================
+const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let currentUser = null;
+let conversationHistory = []; // რეალური chat history Claude-სთვის
+let isSending = false;
+
+// =====================================================================
+// VIEW SWITCHING
+// =====================================================================
+function show(viewId){
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(viewId).classList.add('active');
+}
+
+// =====================================================================
+// AUTH HELPERS
+// =====================================================================
+function showAuthError(msg, isSuccess = false){
+  const el = document.getElementById('auth-error');
+  el.textContent = msg;
+  el.style.color = isSuccess ? '#4caf50' : '#e0566c';
+  el.style.display = 'block';
+}
+function clearAuthError(){
+  document.getElementById('auth-error').style.display = 'none';
+}
+
+// =====================================================================
+// ENTER CHAT
+// =====================================================================
+async function enterChat(){
+  show('view-chat');
+  conversationHistory = []; // reset history on new session
+  if(currentUser){
+    await _sb.from('users').update({ last_login_at: new Date().toISOString() }).eq('id', currentUser.id);
+    await loadChatHistory();
+  }
+}
+
+// =====================================================================
+// UPSERT USER
+// =====================================================================
+async function upsertUser(authUser){
+  const meta = authUser.user_metadata || {};
+  await _sb.from('users').upsert({
+    id: authUser.id,
+    email: authUser.email,
+    auth_provider: authUser.app_metadata?.provider || 'email',
+    google_id: meta.sub || null,
+    display_name: meta.full_name || meta.name || authUser.email,
+    last_login_at: new Date().toISOString()
+  }, { onConflict: 'id' });
+}
+
+// =====================================================================
+// GOOGLE OAUTH
+// =====================================================================
+document.getElementById('google-btn').addEventListener('click', async () => {
+  clearAuthError();
+  const { error } = await _sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.href }
+  });
+  if(error) showAuthError('Google ავტორიზაცია ვერ მოხერხდა: ' + error.message);
+});
+
+// =====================================================================
+// EMAIL MAGIC LINK
+// =====================================================================
+async function handleContinue(){
+  clearAuthError();
+  const email = document.getElementById('email-input').value.trim();
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+    showAuthError('გთხოვთ შეიყვანოთ სწორი ელ-ფოსტა ან გამოიყენოთ Google');
+    return;
+  }
+  const btn = document.getElementById('continue-btn');
+  btn.textContent = 'იგზავნება...';
+  btn.disabled = true;
+
+  const { error } = await _sb.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: window.location.href }
+  });
+
+  btn.textContent = 'გაგრძელება';
+  btn.disabled = false;
+
+  if(error){
+    showAuthError('შეცდომა: ' + error.message);
+  } else {
+    showAuthError('✅ Magic link გამოგზავნილია! შეამოწმეთ ელ-ფოსტა.', true);
+  }
+}
+
+// =====================================================================
+// PLAN SELECTION
+// =====================================================================
+function selectPlan(el){
+  document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+// =====================================================================
+// SIDEBAR
+// =====================================================================
+const sidebar   = document.getElementById('sidebar');
+const collapseBtn     = document.getElementById('collapse-btn');
+const openSidebarBtn  = document.getElementById('open-sidebar-btn');
+
+collapseBtn.addEventListener('click', () => {
+  sidebar.classList.add('collapsed');
+  openSidebarBtn.style.display = 'flex';
+});
+openSidebarBtn.addEventListener('click', () => {
+  sidebar.classList.remove('collapsed');
+  openSidebarBtn.style.display = 'none';
+});
+
+// Mobile: close sidebar on outside tap
+document.addEventListener('click', (e) => {
+  if(window.innerWidth <= 860 && !sidebar.contains(e.target) && !openSidebarBtn.contains(e.target)){
+    if(!sidebar.classList.contains('collapsed')){
+      sidebar.classList.add('collapsed');
+      openSidebarBtn.style.display = 'flex';
+    }
+  }
+});
+
+// =====================================================================
+// THEME
+// =====================================================================
+function applyTheme(light){
+  document.body.classList.toggle('light', light);
+  const dn = document.getElementById('daynight-toggle');
+  if(dn) dn.classList.toggle('is-light', light);
+  localStorage.setItem('jarvis_theme', light ? 'light' : 'dark');
+}
+function toggleTheme(){ applyTheme(!document.body.classList.contains('light')); }
+(function initTheme(){
+  if(localStorage.getItem('jarvis_theme') === 'light') applyTheme(true);
+})();
+
+// =====================================================================
+// LOGOUT
+// =====================================================================
+async function logout(){
+  await _sb.auth.signOut();
+  currentUser = null;
+  conversationHistory = [];
+  show('view-auth');
+}
+
+// =====================================================================
+// CHAT ELEMENTS
+// =====================================================================
+const chatInner = document.getElementById('chat-inner');
+const chatEmpty = document.getElementById('chat-empty');
+const chatScroll = document.getElementById('chat-scroll');
+const chatInput  = document.getElementById('chat-input');
+const sendBtn    = document.getElementById('send-btn');
+
+// =====================================================================
+// NEW CHAT
+// =====================================================================
+function startNewChat(){
+  chatInner.innerHTML = '';
+  chatEmpty.style.display = 'flex';
+  conversationHistory = [];
+  document.querySelectorAll('.history-item').forEach(h => h.classList.remove('active'));
+  if(window.innerWidth <= 860){
+    sidebar.classList.add('collapsed');
+    openSidebarBtn.style.display = 'flex';
+  }
+}
+
+// =====================================================================
+// LOAD PAST CHAT HISTORY FROM SUPABASE (last 20 messages)
+// =====================================================================
+async function loadChatHistory(){
+  if(!currentUser) return;
+  const { data } = await _sb
+    .from('chat_messages')
+    .select('role, content, created_at')
+    .eq('user_id', currentUser.id)
+    .order('created_at', { ascending: false })
+    .limit(20);
+
+  if(!data || data.length === 0) return;
+
+  // reverse to chronological order
+  const msgs = data.reverse();
+
+  // hide empty state
+  chatEmpty.style.display = 'none';
+
+  // rebuild conversation history for API
+  conversationHistory = msgs.map(m => ({ role: m.role, content: m.content }));
+
+  // render messages in UI
+  msgs.forEach(m => {
+    const div = document.createElement('div');
+    div.className = 'msg ' + (m.role === 'user' ? 'user' : 'ai') + ' ka';
+    div.textContent = m.content;
+    chatInner.appendChild(div);
+  });
+
+  chatScroll.scrollTop = chatScroll.scrollHeight;
+}
+
+// =====================================================================
+// JARVIS STORY (demo conversation)
+// =====================================================================
+function loadJarvisStory(){
+  startNewChat();
+  chatEmpty.style.display = 'none';
+  addMsg('მომიყევი ჯარვისის შექმნის ისტორია', true);
+  setTimeout(() => {
+    addMsg('როდესაც მსოფლიოს უმსხვილესი კომპანიები ხელოვნურ ინტელექტში მილიარდებს დებდნენ, პატარა გუნდმა საქართველოში გადაწყვიტა: ჩვენს ქვეყანასაც უნდა ჰქონდეს საკუთარი, ქართულ ენაზე მოაზროვნე AI ასისტენტი.\n\nასე დაიბადა JARVIS — საქართველოს პირველი AI ასისტენტი, რომელიც ქართულ კულტურას, ენას და კონტექსტს ნამდვილად ესმის.', false);
+  }, 600);
+  if(window.innerWidth <= 860){
+    sidebar.classList.add('collapsed');
+    openSidebarBtn.style.display = 'flex';
+  }
+}
+
+// =====================================================================
+// ADD MESSAGE TO UI
+// =====================================================================
+function addMsg(text, isUser){
+  if(chatEmpty && chatEmpty.style.display !== 'none') chatEmpty.style.display = 'none';
+  const div = document.createElement('div');
+  div.className = 'msg ' + (isUser ? 'user' : 'ai') + ' ka';
+  div.textContent = text;
+  chatInner.appendChild(div);
+  chatScroll.scrollTop = chatScroll.scrollHeight;
+  return div;
+}
+
+// =====================================================================
+// TYPING INDICATOR
+// =====================================================================
+function showTyping(){
+  const el = document.createElement('div');
+  el.className = 'typing-indicator';
+  el.id = 'typing-indicator';
+  el.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+  chatInner.appendChild(el);
+  chatScroll.scrollTop = chatScroll.scrollHeight;
+  return el;
+}
+function removeTyping(){
+  const el = document.getElementById('typing-indicator');
+  if(el) el.remove();
+}
+
+// =====================================================================
+// FREE TRIAL — SUPABASE
+// =====================================================================
+async function getTrialState(){
+  if(!currentUser) return { count: 0, windowStart: Date.now() };
+  const { data } = await _sb.from('trial_usage').select('message_count,window_start').eq('user_id', currentUser.id).single();
+  if(!data) return { count: 0, windowStart: Date.now() };
+  const ws = new Date(data.window_start).getTime();
+  if((Date.now() - ws) >= RESET_MS){
+    await _sb.from('trial_usage').upsert({
+      user_id: currentUser.id, message_count: 0,
+      window_start: new Date().toISOString(), updated_at: new Date().toISOString()
+    }, { onConflict: 'user_id' });
+    return { count: 0, windowStart: Date.now() };
+  }
+  return { count: data.message_count, windowStart: ws };
+}
+
+async function incrementTrial(){
+  if(!currentUser) return 1;
+  const { data } = await _sb.from('trial_usage').select('message_count').eq('user_id', currentUser.id).single();
+  const newCount = ((data && data.message_count) || 0) + 1;
+  await _sb.from('trial_usage').upsert({
+    user_id: currentUser.id, message_count: newCount,
+    updated_at: new Date().toISOString()
+  }, { onConflict: 'user_id' });
+  return newCount;
+}
+
+async function isPaidUser(){
+  if(!currentUser) return false;
+  const { data } = await _sb.from('subscriptions')
+    .select('id').eq('user_id', currentUser.id).eq('status','active').maybeSingle();
+  return !!data;
+}
+
+// =====================================================================
+// PAYWALL
+// =====================================================================
+function msToHm(ms){
+  const totalMin = Math.max(0, Math.ceil(ms / 60000));
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return (h > 0 ? h + ' სთ ' : '') + m + ' წთ';
+}
+
+function showPaywall(remain){
+  if(chatEmpty && chatEmpty.style.display !== 'none') chatEmpty.style.display = 'none';
+  // remove existing paywall if any
+  const existing = document.querySelector('.paywall-card');
+  if(existing) existing.remove();
+
+  const card = document.createElement('div');
+  card.className = 'paywall-card';
+  card.innerHTML =
+    '<div class="paywall-title ka">უფასო მცდელობები ამოიწურა</div>' +
+    '<div class="paywall-sub ka">გააგრძელეთ შეუზღუდავად Pro ან Max გეგმით</div>' +
+    '<div class="paywall-plans">' +
+      '<div class="paywall-plan" onclick="subscribe(\'pro\')">' +
+        '<div class="name ka">Pro</div>' +
+        '<div class="price">₾20 / თვე</div>' +
+        '<div class="features ka">შეუზღუდავი შეტყობინებები</div>' +
+      '</div>' +
+      '<div class="paywall-plan" onclick="subscribe(\'max\')">' +
+        '<div class="name ka">Max</div>' +
+        '<div class="price">₾40 / თვე</div>' +
+        '<div class="features ka">შეუზღუდავი + პრიორიტეტი</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="paywall-timer ka">ან დაელოდეთ ' + msToHm(remain || 0) + ' — კიდევ ' + FREE_LIMIT + ' უფასო მცდელობა</div>';
+  chatInner.appendChild(card);
+  chatScroll.scrollTop = chatScroll.scrollHeight;
+}
+
+// =====================================================================
+// SUBSCRIBE — pending სტატუსით (გადახდამდე)
+// NOTE: გადახდის სისტემა (Stripe/BOG) — შენი გასაკეთებელია
+// =====================================================================
+async function subscribe(plan){
+  if(!currentUser) return;
+
+  // pending — გადახდის დადასტურებამდე active არ ხდება
+  await _sb.from('subscriptions').upsert({
+    user_id: currentUser.id,
+    plan,
+    status: 'pending',
+    started_at: new Date().toISOString(),
+    current_period_end: new Date(Date.now() + 30*24*60*60*1000).toISOString()
+  }, { onConflict: 'user_id' });
+
+  // გადამისამართება გადახდის გვერდზე
+  // TODO: შეცვალე შენი გადახდის URL-ით (Stripe / BOG Pay)
+  const paymentUrls = {
+    pro:  'https://your-payment-link.com/pro?user=' + currentUser.id,
+    max:  'https://your-payment-link.com/max?user=' + currentUser.id
+  };
+
+  addMsg('გადახდის გვერდზე გადამისამართება... ₾' + (plan === 'max' ? '40' : '20') + '/თვე — ' + plan.toUpperCase() + ' გეგმა', false);
+
+  // გადახდის სისტემა დარჩენილია შენთვის — uncomment when ready:
+  // window.location.href = paymentUrls[plan];
+}
+
+// =====================================================================
+// ✅ REAL AI — ANTHROPIC API via Supabase Edge Function
+// =====================================================================
+async function callJarvisAI(userMessage, session){
+  const response = await fetch(JARVIS_FUNCTION_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + session.access_token
+    },
+    body: JSON.stringify({
+      messages: conversationHistory,
+      userId: currentUser.id
+    })
+  });
+
+  if(!response.ok){
+    const err = await response.text();
+    throw new Error('API Error: ' + err);
+  }
+
+  const data = await response.json();
+  return data.reply;
+}
+
+// =====================================================================
+// SEND MESSAGE — მთავარი ფუნქცია
+// =====================================================================
+async function sendMessage(){
+  const text = chatInput.value.trim();
+  const files = pendingFiles.slice();
+  if((!text && files.length === 0) || isSending) return;
+
+  // Paid check
+  const paid = await isPaidUser();
+  if(!paid){
+    const { count, windowStart } = await getTrialState();
+    if(count >= FREE_LIMIT){
+      chatInput.value = '';
+      clearAttachments();
+      showPaywall(RESET_MS - (Date.now() - windowStart));
+      return;
+    }
+  }
+
+  // Build display text
+  let displayText = text;
+  if(files.length) displayText += (text ? '\n' : '') + '📎 ' + files.map(f => f.name).join(', ');
+
+  addMsg(displayText, true);
+  chatInput.value = '';
+  clearAttachments();
+
+  isSending = true;
+  sendBtn.disabled = true;
+
+  // Show typing
+  showTyping();
+
+  // Add to history BEFORE api call
+  conversationHistory.push({ role: 'user', content: displayText });
+
+  // Save user message to DB
+  if(currentUser){
+    _sb.from('chat_messages').insert({
+      user_id: currentUser.id, role: 'user', content: displayText
+    });
+  }
+
+  try {
+    const { data: { session } } = await _sb.auth.getSession();
+
+    let reply;
+    try {
+      // ✅ REAL API CALL
+      reply = await callJarvisAI(displayText, session);
+    } catch(apiErr) {
+      // Edge Function deploy-მდე fallback — ამოიღე production-ში
+      console.warn('Edge Function not deployed yet, using fallback:', apiErr.message);
+      reply = 'Edge Function ჯერ არ არის deploy-ირებული. გთხოვთ გამართოთ Supabase Edge Function "jarvis-chat". დეტალები: ' + apiErr.message;
+    }
+
+    removeTyping();
+    addMsg(reply, false);
+
+    // Add assistant reply to history
+    conversationHistory.push({ role: 'assistant', content: reply });
+
+    // Save assistant reply to DB
+    if(currentUser){
+      _sb.from('chat_messages').insert({
+        user_id: currentUser.id, role: 'assistant', content: reply
+      });
+    }
+
+    // Increment trial if not paid
+    if(!paid){
+      const newCount = await incrementTrial();
+      if(newCount >= FREE_LIMIT){
+        const { windowStart } = await getTrialState();
+        setTimeout(() => showPaywall(RESET_MS - (Date.now() - windowStart)), 300);
+      }
+    }
+
+  } catch(err) {
+    removeTyping();
+    addMsg('შეცდომა მოხდა. სცადეთ ხელახლა. (' + err.message + ')', false);
+    // Remove failed message from history
+    conversationHistory.pop();
+  } finally {
+    isSending = false;
+    sendBtn.disabled = false;
+    chatInput.focus();
+  }
+}
+
+sendBtn.addEventListener('click', sendMessage);
+chatInput.addEventListener('keypress', e => {
+  if(e.key === 'Enter' && !e.shiftKey) sendMessage();
+});
+
+// =====================================================================
+// FILE ATTACH
+// =====================================================================
+const attachBtn     = document.getElementById('attach-btn');
+const fileInput     = document.getElementById('file-input');
+const attachPreview = document.getElementById('attach-preview');
+let pendingFiles = [];
+
+attachBtn.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', () => {
+  pendingFiles = Array.from(fileInput.files);
+  renderAttachments();
+});
+function renderAttachments(){
+  attachPreview.innerHTML = '';
+  pendingFiles.forEach((f, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'attach-chip ka';
+    chip.textContent = f.name + ' ✕';
+    chip.onclick = () => { pendingFiles.splice(i, 1); renderAttachments(); };
+    attachPreview.appendChild(chip);
+  });
+}
+function clearAttachments(){
+  pendingFiles = [];
+  fileInput.value = '';
+  attachPreview.innerHTML = '';
+}
+
+// =====================================================================
+// AUTH STATE LISTENER
+// =====================================================================
+_sb.auth.onAuthStateChange(async (event, session) => {
+  if(session && session.user){
+    currentUser = session.user;
+    await upsertUser(session.user);
+    await enterChat();
+  } else {
+    currentUser = null;
+    show('view-auth');
+  }
+});
+
+// Init: restore session on load
+(async function initAuth(){
+  const { data: { session } } = await _sb.auth.getSession();
+  if(session && session.user){
+    currentUser = session.user;
+    await upsertUser(session.user);
+    await enterChat();
+  }
+})();
+</script>
+</body>
+</html>
