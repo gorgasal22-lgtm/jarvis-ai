@@ -11,6 +11,27 @@ env = { "CI" = "true" }
 [workflows]
 runButton = "Project"
 
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "JARVIS App"
+
+[[workflows.workflow]]
+name = "JARVIS App"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pnpm --filter @workspace/jarvis run dev"
+waitForPort = 3000
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
 [agent]
 stack = "PNPM_WORKSPACE"
 expertMode = true
@@ -18,3 +39,10 @@ expertMode = true
 [postMerge]
 path = "scripts/post-merge.sh"
 timeoutMs = 20000
+
+[userenv]
+
+[userenv.shared]
+NEXT_PUBLIC_SITE_URL = "https://tnirrhlxjpyifcgpwbjq.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY = "sb_publishable_n9jDFTNIycBDQCXSbOqm8g_PNU71r0L"
+NEXT_PUBLIC_SUPABASE_URL = "https://tnirrhlxjpyifcgpwbjq.supabase.co"
