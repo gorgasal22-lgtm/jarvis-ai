@@ -68,23 +68,9 @@ export default function ChatView({ user, onLogout }: Props) {
     }
   }, [messages, isTyping]);
 
-  // ── Mobile: close sidebar on outside tap ─────────────────────────────────
+  // Mobile sidebar: collapsed by default on small screens
   useEffect(() => {
-    function handleOutsideClick(e: MouseEvent) {
-      if (window.innerWidth > 860) return;
-      const sidebar = document.getElementById('jarvis-sidebar');
-      const openBtn = document.getElementById('open-sidebar-btn');
-      if (
-        sidebar &&
-        !sidebar.contains(e.target as Node) &&
-        openBtn &&
-        !openBtn.contains(e.target as Node)
-      ) {
-        setSidebarCollapsed(true);
-      }
-    }
-    document.addEventListener('click', handleOutsideClick);
-    return () => document.removeEventListener('click', handleOutsideClick);
+    if (window.innerWidth <= 860) setSidebarCollapsed(true);
   }, []);
 
   // ── Load history + update last_login on mount ─────────────────────────────
@@ -355,6 +341,15 @@ export default function ChatView({ user, onLogout }: Props) {
 
   return (
     <div className="view active" id="view-chat">
+      {/* ── Mobile backdrop — closes drawer on tap ── */}
+      {!sidebarCollapsed && (
+        <div
+          className="sidebar-backdrop"
+          aria-hidden="true"
+          onClick={() => setSidebarCollapsed(true)}
+        />
+      )}
+
       {/* ── Sidebar ── */}
       <div
         id="jarvis-sidebar"
@@ -441,19 +436,18 @@ export default function ChatView({ user, onLogout }: Props) {
         {/* Topbar */}
         <div className="chat-topbar">
           <div className="topbar-left">
-            {sidebarCollapsed && (
-              <button
-                id="open-sidebar-btn"
-                className="icon-btn"
-                onClick={() => setSidebarCollapsed(false)}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <line x1="4" y1="7" x2="20" y2="7" />
-                  <line x1="4" y1="12" x2="20" y2="12" />
-                  <line x1="4" y1="17" x2="20" y2="17" />
-                </svg>
-              </button>
-            )}
+            {/* Hamburger — always visible on mobile (hidden on desktop via CSS) */}
+            <button
+              className="icon-btn mobile-hamburger"
+              aria-label="მენიუ"
+              onClick={() => setSidebarCollapsed((prev) => !prev)}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <line x1="4" y1="7" x2="20" y2="7" />
+                <line x1="4" y1="12" x2="20" y2="12" />
+                <line x1="4" y1="17" x2="20" y2="17" />
+              </svg>
+            </button>
             <div className="brand-wordmark" style={{ fontSize: '15px' }}>
               JARVIS<span className="ai-badge" style={{ fontSize: '12px' }}>A.I</span>
             </div>

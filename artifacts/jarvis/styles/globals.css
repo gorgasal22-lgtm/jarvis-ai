@@ -321,14 +321,36 @@ body{
 .paywall-plan .features{ font-size:11px; color:var(--muted); margin-top:6px; font-family:'Noto Sans Georgian',sans-serif; line-height:1.5; }
 .paywall-timer{ font-family:'Noto Sans Georgian',sans-serif; font-size:12px; color:#5e5c66; text-align:center; }
 
+/* Mobile hamburger — hidden on desktop, shown on mobile via media query */
+.mobile-hamburger{ display:none; }
+
+/* Sidebar backdrop — only rendered in DOM on mobile when sidebar is open */
+@keyframes backdropIn{ from{opacity:0;} to{opacity:1;} }
+
 /* Responsive */
 @media (max-width: 860px){
   #view-chat{ position:relative; }
+
+  /* Drawer */
   .sidebar{
     position:fixed; top:0; left:0; bottom:0; z-index:40;
-    transform:translateX(0); transition:transform .25s ease;
+    transform:translateX(0); transition:transform .28s cubic-bezier(.4,0,.2,1);
+    box-shadow:4px 0 24px rgba(0,0,0,.55);
   }
   .sidebar.collapsed{ margin-left:0; transform:translateX(-100%); }
+
+  /* Backdrop */
+  .sidebar-backdrop{
+    position:fixed; inset:0; z-index:39;
+    background:rgba(0,0,0,.55);
+    backdrop-filter:blur(1px);
+    -webkit-backdrop-filter:blur(1px);
+    animation:backdropIn .22s ease;
+  }
+
+  /* Hamburger always visible on mobile */
+  .mobile-hamburger{ display:flex; }
+
   .chat-main{ width:100%; }
   .chat-topbar{ padding:0 14px; }
   .chat-scroll{ padding:18px 12px 10px; }
